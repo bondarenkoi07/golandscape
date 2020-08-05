@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2.5D Landscape Editor</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="css/style.css"/>
+</head>
+<body>
+<div class="container" id = "container">
+    <header>
+        <!--Здесь будут кнопки навигации и окно логина-->
+        <table width = "100%"  >
+            <tr>
+                <td width = "50%">
+                    <button class="navbutton" id ="exportButton" onclick = "exportToJson()">Сохранить</button>
+                    <button class="navbutton" onclick = "importFromJson()">Загрузить</button>
+                    <button class="navbutton" onclick="generate()">Экспорт в PNG</button>
+                    <button class="navbutton" onclick="switchGrid()">Вкл/Выкл сетку</button>
+                    <button class="navbutton" id="text"></button>
+                </td>
+                <td width = "50%">
+                </td>
+            </tr>
+        </table>
+    </header>
+    <main>
+        <div class="leftpanel" id = "objectList">
+            <h5 align="center">Список используемых моделей</h5>
+        </div>
+        <div class="canvascontainer" id="canvasishere">
+        </div>
+        <div class="rightpanel">
+            <div id="textureMenu">
+                <h3>Выбор основной текстуры</h3>
+                <div class="rightPanelDiv" onclick="changeTexture('GrassTexture.jpg')">
+                    <img width = "100" height = "100" id="GrassTexture.jpg" src="assets/textures/GrassTexture.jpg" alt="Не прогрузилось">
+                   <p>Grass</p>
+                </div>
+                <div class="rightPanelDiv" onclick="changeTexture('SandTexture.jpg')">
+                    <img width = "100" height = "100" id="SandTexture.jpg" src="assets/textures/SandTexture.jpg" alt="Не прогрузилось">
+                    <p>Sand</p>
+                </div>
+                <div class="rightPanelDiv" onclick="changeTexture('SnowTexture.jpg')">
+                    <img width = "100" height = "100" id="SnowTexture.jpg" src="assets/textures/SnowTexture.jpg" alt="Не прогрузилось">
+                    <p>Snow</p>
+                </div>
+                <div class="rightPanelDiv" onclick="changeTexture('SoilTexture.png')">
+                    <img width = "100" height = "100" id="SoilTexture.png" src="assets/textures/SoilTexture.png" alt="Не прогрузилось">
+                    <p>Soil</p>
+                </div>
+        </div>
+            <div id="modelMenu" style="display:none;">
+                <h3>Поместить модели</h3>
+                <div class="rightPanelDiv" onclick="addModel('Castle.png')">
+                    <img class="models" id="Castle.png" src="assets/models/Castle.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('DryTree.png')">
+                    <img class="models" id="DryTree.png" src="assets/models/DryTree.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('House.png')">
+                    <img class="models" id="House.png" src="assets/models/House.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('Pond.png')">
+                    <img class="models" id="Pond.png" src="assets/models/Pond.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('SnowyTree.png')">
+                    <img class="models" id="SnowyTree.png" src="assets/models/SnowyTree.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('Tree.png')">
+                    <img class="models" id="Tree.png" src="assets/models/Tree.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+                <div class="rightPanelDiv" onclick="addModel('Ziggurat.png')">
+                    <img class="models" id="Ziggurat.png" src="assets/models/Ziggurat.png" alt="Не прогрузилось">
+                    <p>castle</p>
+                </div>
+            </div>
+</div>
+    </main>
+    <div class = "toolpanel">
+        <div class = "toolbar">
+            <button class="toolButton" id = "terrainUpButton" onclick="chooseInstrument('terrainUp')"><img width="50" height = "50" src="assets/icons/terrainUp.png" alt="Поднять ландшафт"></button>
+            <button class="toolButton" id = "terrainDownButton" onclick="chooseInstrument('terrainDown')"><img width="50" height = "50" src="assets/icons/terrainDown.png" alt="Понизить ландшафт"></button>
+            <button class="toolButton" id = "addModelButton" onclick="chooseInstrument('addModel')"><img width="50" height = "50" src="assets/icons/addObject.png" alt="Добавить объект"></button>
+            <button class="toolButton" id = "changeMainTextureButton" onclick="chooseInstrument('changeTexture')"><img width="50" height = "50" src="assets/icons/changeTexture.png" alt="Изменить текстуру поверхности"></button>
+        </div>
+    </div>
+    <footer id="test">
+    </footer>
+</div>
+<script src="js/script.js" type="text/javascript" defer></script>
+</body>
+</html>

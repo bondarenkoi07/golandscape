@@ -1,0 +1,104 @@
+body
+{
+	background-color:#27272f;
+	font-family:Arial;
+	color:#BDBDD2;
+	font-size:1em;
+	overflow:hidden;
+}
+.container
+{
+	transform-origin: 0 0 0;
+	width:1904px;
+	height:950px;
+}
+header
+{
+	width:100%;
+	height:5vh;
+}
+main
+{
+	width:100%;
+	height:70%;
+}
+input
+{
+	background-color:#27272f;
+	border:1px solid;
+	border-color:#BDBDD2;
+	color:#BDBDD2;
+	font-size:1em;
+}
+p
+{
+	margin:20px;
+}
+.loginform
+{
+	text-align:right;
+	margin-left:auto;
+	margin-right: 0em;
+}
+.navbutton
+{
+	height:100%;
+	background-color:#27272f;
+	border:0;
+	color:#BDBDD2;
+	font-size:1em;
+}
+.navbutton:hover
+{
+	color:#888897;
+}
+.canvascontainer
+{
+	min-height:663px;
+	width:70%;
+	background-color:#2a2a33;
+	float: left;
+    margin: 0 2px 0 2px;
+}
+.leftpanel
+{
+	height:100%;
+	width:15%;
+	background-color:#2a2a33;
+	float: left;
+    margin-left:2px;
+	overflow-y:auto;
+}
+.rightpanel
+{
+	height:100%;
+	width:14%;
+	background-color:#2a2a33;
+    margin-right:2px;
+	float:left;
+	text-align:center;
+	overflow-y:auto;
+}
+.toolpanel
+{
+	height:20%;
+	width:99%;
+	margin: 2px;
+	background-color:#2a2a33;
+}
+.rightPanelDiv:hover
+{
+	background-color:#3a3a45
+}
+.toolButton
+{
+	height:100%;
+	background-color:#2a2a33;
+	border:0;
+	color:#BDBDD2;
+	font-size:1em;
+}
+.toolButton:hover
+{
+	background-color:#3a3a45
+}
