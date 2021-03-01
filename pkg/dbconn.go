@@ -1,11 +1,11 @@
 package pkg
 
 import (
+	"../Model"
 	"fmt"
 	_ "github.com/jackc/pgx"
 	"github.com/jackc/pgx/pgxpool"
 	"golang.org/x/net/context"
-	_ "os"
 )
 
 //структура БД
@@ -15,20 +15,10 @@ type DB struct {
 	ctx  context.Context
 }
 
-//Cтруктура операции
-type ChangeData struct {
-	Id         int64  `json:"id"`
-	Mode       string `json:"mode"`
-	X          int64  `json:"x"`
-	Y          int64  `json:"y"`
-	Model      string `json:"model"`
-	Connection string `json:"connection"`
-}
-
 //инициализируем нашу БД
 func (dbp *DB) NewDB() error {
 	(*dbp).ctx = context.Background()
-	dsn := "postgres://landscape:Ee010800@localhost:5432/landscape"
+	dsn := "postgres://labs_work:fghfghfgh1337@localhost:5432/labs_work"
 	var err error
 	(*dbp).pool, err = pgxpool.Connect((*dbp).ctx, dsn)
 	if err != nil {
@@ -38,7 +28,7 @@ func (dbp *DB) NewDB() error {
 }
 
 //Запись полученной операции в БД
-func (dbp *DB) OnRead(msg ChangeData) error {
+func (dbp *DB) OnRead(msg Model.ChangeData) error {
 	SQLStatement := "insert into landscape(x,y,_mode,model,connect) values ($1,$2,$3,$4,$5)"
 	//берем коннект из пула
 	conn, err := (*dbp).pool.Acquire((*dbp).ctx)
@@ -56,7 +46,7 @@ func (dbp *DB) OnRead(msg ChangeData) error {
 		return err
 	}
 	//записываем операцию в БД
-	_, err = tx.Exec((*dbp).ctx, SQLStatement, msg.X, msg.Y, msg.Mode, msg.Model, msg.Connection)
+	_, err = tx.Exec((*dbp).ctx, SQLStatement, msg.X, msg.Y, msg.Mode, msg.Model)
 
 	if err != nil {
 		fmt.Print("SQL Error:", err)
@@ -87,11 +77,11 @@ func (dbp *DB) OnConnection() (interface{}, error) {
 		return []byte(""), err
 	}
 	rows, err := tx.Query((*dbp).ctx, SQLStatement)
-	var arr ChangeData
+	var arr Model.ChangeData
 	output := make(map[int]interface{})
 	var i = 0
 	for rows.Next() {
-		err = rows.Scan(&arr.Id, &arr.X, &arr.Y, &arr.Model, &arr.Mode, &arr.Connection)
+		err = rows.Scan(&arr.Id, &arr.X, &arr.Y, &arr.Model, &arr.Mode)
 		if err != nil {
 			fmt.Print("SQL Error:", err)
 			return []byte(""), err

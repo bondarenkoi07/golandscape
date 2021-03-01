@@ -27,30 +27,33 @@ var intOfCols = Math.floor(Math.sqrt(width*width+height*height)/tileSize);//Ко
 var intOfRows = Math.floor(height/tileSize)+2;//Количество строк плиток. Из-за искажения они уходят в минус,
 var textureName = 'SandTexture.jpg';//переменная с названием текстуры. Изначально - трава
 var mouseCoord = {'x':2,'y':0}; //Координата (в ед. отрезках) которая находится под мышью
-var landscapeData = {};//Массив данных ландшафта. Изначально заполняем нулями
+
+var landscapeData ={};//Список данных ландшафта. Изначально заполняем нулями
 var jsonmes = {'id':0,'mode':'','x':0,'y':0,'model':'','connection':''};
 
 
-for(var y = -intOfRows; y < intOfRows;y++)
+let y;
+let x;
+for(y = -intOfRows; y < intOfRows; y++)
 {
 	landscapeData[y]=[];
-	for(var x = 0; x < intOfCols;x++)
+	for(x = 0; x < intOfCols; x++)
 	{
 		landscapeData[y][x] = 0;
 	}
 }	
 var objectData = {};//Массив данных объектов. Изначально заполняем пустыми строками
-for(var y = -intOfRows; y < intOfRows;y++)
+for(y = -intOfRows; y < intOfRows; y++)
 {
 	objectData[y]=[];
-	for(var x = 0; x < intOfCols;x++)
+	for(x = 0; x < intOfCols; x++)
 	{
 		objectData[y][x] = "";
 	}
-}	
-var texture, frontSlope,leftFrontSlope,rightFrontSlope,leftSlope,rigthSlope,topTile;
+}
+let texture, frontSlope, leftFrontSlope, rightFrontSlope, leftSlope, rigthSlope, topTile;
 changeTexture(textureName);// Изначальная текстура - трава
-var modelName="";//Сюда будем запоминать имя отрисовываемой модели
+let model = "";//Сюда будем запоминать имя отрисовываемой модели
 
 var maxHeight = 3;//Максимальная высота ландшафта
 var minHeight = 0;//Минимальная высота ландшафта
@@ -68,6 +71,11 @@ canvas.addEventListener("mousemove", function(e){
 	
 	reDraw();
 });
+// Object contains info about mounts and "objects" placed on map
+let Transaction = {landscape: landscapeData,
+	object: objectData,
+	texture:textureName}
+
 //И отслеживание клика мышью
 canvas.addEventListener("mousedown", function (e){
 	x = mouseCoord.x;
@@ -94,18 +102,24 @@ canvas.addEventListener("mousedown", function (e){
 		jsonmes.connection='';
         console.log(JSON.stringify(jsonmes));
 		ws.send(JSON.stringify(jsonmes));
-	} else if(addingModel&&modelName!==""&&objectData[y][x]===""){ //Добавляем модель только если выбран инструмент добавления модели, выбрана модель и по координате моделей нет
-		objectData[y][x]=modelName;
+	} else if(addingModel&&model!==""&&objectData[y][x]===""&&model!=="none"){ //Добавляем модель только если выбран инструмент добавления модели, выбрана модель и по координате моделей нет
+		objectData[y][x]=model;
 		jsonmes.id=0;
 		jsonmes.x=x;
 		jsonmes.y=y;
 		jsonmes.mode='PlaceModel';
-		jsonmes.model=modelName;
+		jsonmes.model=model;
 		jsonmes.connection='';
 		fillModelControl(x,y);
         console.log(JSON.stringify(jsonmes));
 		ws.send(JSON.stringify(jsonmes));
 	}
+	Transaction.landscape = landscapeData;
+	Transaction.object = objectData;
+	Transaction.texture = textureName;
+	//sending Map data to be used by new users
+	let transactionString = JSON.stringify(Transaction);
+	canvaStructure.send(transactionString);
 	reDraw();
 });
 
@@ -119,42 +133,97 @@ var addingLocalTexture = false;
 
 reDraw();
 
-ws = new WebSocket('ws://db1.mati.su:8000/ws');
-ws.onmessage = function tmp (e) {
-    var mode;
-    var data = JSON.parse(e.data);
-    console.log(data+'\n');
-    try {
-        for (let i in data) {
-            mode = data[i]['mode'];
-            x = data[i]['x'];
-            y = data[i]['y'];
-            modelName = data[i]['model'];
-            console.log(modelName + '\n');
-            if (mode == 'up') {
-                console.log('up');
-                doTerrainUp(x, y);
-            } else if (mode == 'down') {
-                console.log('down');
-                doTerrainDown(x, y);
-            } else if (mode == 'PlaceModel') {
-                if (modelName != 'none') {
-                    console.log('place model');
-                    objectData[y][x] = modelName;
-                    fillModelControl(x, y);
-                }
-            } else if (mode == 'DeleteModel')
-                if (modelName != 'none') {
-                    ClientDeleteModel(x, y)
-                    console.log('delete model');
+// HEADER: WebSocket connections
+//In this part of code represented usage of websocket connections  through
+//which will be served transition of data between client and server
+// @ws will work for transiting every user's action on canvas
 
-                }
+
+//TERMINOLOGY:
+// canvas - structure including info about relief of landscape, placed object and it's coordinates
+// and also texture of landscape
+// message - structure including info about single action made by user,
+//which will be send to all other users through server (see controller.go)
+
+// webSocket ws sends info about changes, which was made up by current user
+ws = new WebSocket('ws://localhost:8000/ws');
+// webSocket canvaStructure will send info about whole map after current user changes come into force
+canvaStructure = new WebSocket('ws://localhost:8000/test');
+// error handler will receive info about occurred errors during validation of canvas structure
+//errors = new WebSocket('ws://localhost:8000/err')
+
+function canvas_receiver(e){
+	const data = JSON.parse(e.data);
+	if (data.hasOwnProperty("landscape")
+		&&data.hasOwnProperty("object")
+		&&data.hasOwnProperty("texture")){
+		console.log("Maybe troubles with condition?");
+		if (data["texture"] !== ""){
+			changeTexture(data["texture"])
 		}
+		if (data["landscape"] !== null){
+			landscapeData = data["landscape"];
+		}
+		if (data["object"] !== null){
+			objectData = data["object"];
+			for(let y = -intOfRows; y < intOfRows; y++)
+			{
+				for(let x = 0; x < intOfCols; x++)
+				{
+					if(objectData[y][x] !== "" && objectData[y][x] !== "none") {
+						model = objectData[y][x]
+						fillModelControl(x, y);
+					}
+				}
+			}
+			model = ""
+		}
+	}
+}
+
+canvaStructure.onmessage = canvas_receiver;
+
+ws.onmessage = function message_receiver (e) {
+    try {
+		let mode;
+		const data = JSON.parse(e.data);
+        if ((!data.hasOwnProperty("landscape")
+			|| !data.hasOwnProperty("object")
+			|| !data.hasOwnProperty("texture"))) {
+			console.log(data);
+            for (let i in data) {
+                if (data.hasOwnProperty(i)) {
+                    mode = data[i]['mode'];
+                    let x = data[i]['x'];
+                    let y = data[i]['y'];
+                    let m = data[i]['model']
+                    console.log(m + '\n');
+                    if (mode === 'up') {
+                        doTerrainUp(x, y);
+                    } else if (mode === 'down') {
+                        console.log('down');
+                        doTerrainDown(x, y);
+                    } else if (mode === 'PlaceModel') {
+						console.log('enter'+ m);
+                        if (model !== 'none') {
+                            objectData[y][x] = m;
+                            fillModelControl(x, y);
+                        }
+                    } else if (mode === 'DeleteModel')
+                        if (model !== 'none') {
+                            ClientDeleteModel(x, y)
+                    }
+                }
+            }
+        }else{
+			canvas_receiver(e)
+        }
 		reDraw();
     }catch (e) {
         console.log(e);
     }
 }
+
 //Функция перерисовки
 function reDraw()
 {
@@ -167,7 +236,7 @@ function reDraw()
 	{
 		ctx.strokeStyle = "rgba(255,165,0,0.5)";
 		//Рисуем горизонтальные линии (в проекции)
-		for(var i = -intOfRows; i < intOfRows; i++)
+		for(let i = -intOfRows; i < intOfRows; i++)
 		{	
 			ctx.beginPath();
 			ctx.moveTo(decartToIsometryX(0,i*tileSize),decartToIsometryY(0,i*tileSize));
@@ -176,7 +245,7 @@ function reDraw()
 			ctx.stroke();
 		}
 		//Рисуем вертикальные линии (в проекции)
-		for (var i = 0; i < intOfCols; i++)
+		for (let i = 0; i < intOfCols; i++)
 		{
 			ctx.beginPath();
 			ctx.moveTo(decartToIsometryX(i*tileSize,-height),decartToIsometryY(i*tileSize,-height));
@@ -186,19 +255,19 @@ function reDraw()
 		}
 	}
 	//Проходимся по массивам с высотами и с объектами, и рисуем поднятые плитки и объекты 
-	for(var z = 1;z <= maxHeight;z++)
+	for(let z = 1; z <= maxHeight; z++)
 	{
-		for(var y = -intOfRows; y < intOfRows; y++)
+		for(let y = -intOfRows; y < intOfRows; y++)
 		{
-			for(var x = 0; x < intOfCols; x++)
+			for(let x = 0; x < intOfCols; x++)
 			{
 				try{//на случай если подминаемая плитка слишком близко к краю и поднятие окружающих приведет к выходу за границу
-				if(landscapeData[y][x] == z)
+				if(landscapeData[y][x] === z)
 				{
 					drawHighland(x,y,landscapeData[y][x]);
 				}
 				}catch(e){}
-				if(objectData[y][x]!="")//Рисуем объект, если он нашелся.
+				if(objectData[y][x]!=="")//Рисуем объект, если он нашелся.
 				{
 					drawModel(x,y,objectData[y][x]);
 				}
@@ -207,9 +276,9 @@ function reDraw()
 	}
 	//Рисуем опорную точку под мышью
 	drawPoint(mouseCoord.x,mouseCoord.y);
-	if(addingModel&&modelName!="")
+	if(addingModel&&model!=="")
 	{
-		drawModel(mouseCoord.x, mouseCoord.y,modelName);
+		drawModel(mouseCoord.x, mouseCoord.y,model);
 	}
 }
 function drawPoint(x,y)
@@ -454,13 +523,13 @@ function drawHighland(x,y,z)
 function addModel(mName)
 {
 	addingModel = true;
-	modelName = mName;
+	model = mName;
 	var models = document.getElementsByClassName("models");
 	for(var i = 0;i < models.length; i++)
 	{
 		models[i].style.border = "";
 	}
-	document.getElementById(modelName).style.border = "2px solid #BDBDD2";
+	document.getElementById(model).style.border = "2px solid #BDBDD2";
 }
 //Функция удаления модельки
 function deleteModel(x,y)
@@ -474,7 +543,7 @@ function deleteModel(x,y)
     ws.send(JSON.stringify(jsonmes));
     ClientDeleteModel(x,y)
 }
-//функция удаления модели без тправки на сервер
+//функция удаления модели без отправки на сервер
 function ClientDeleteModel(x,y)
 {
     var mControl = document.getElementById(objectData[y][x]+""+x+","+y);
@@ -486,7 +555,7 @@ function ClientDeleteModel(x,y)
 //Функция отрисовки модельки
 function drawModel(x,y,mName)
 {
-	var model = document.getElementById(mName);
+	const model = document.getElementById(mName);
 	//Помимио помещения модельки в точку, наде еще и сдвинуть её, во-первых в середину плитки, а во вторых, на высоту и половину ширины назад,
 	//так как у картинки координата 0 находится в верхнем левом углу
 	ctx.drawImage(model, decartToIsometryX((x+0.5)*tileSize,(y+0.5)*tileSize)-model.width/2,decartToIsometryY((x+0.5)*tileSize,(y+0.5)*tileSize)-model.height-landscapeData[y][x]*tileSize);
@@ -558,10 +627,7 @@ function doTerrainDown(x,y)
 //Функция включения/выключения сетки
 function switchGrid()
 {
-	if(GridEnabled)
-		GridEnabled = false;
-	else
-		GridEnabled = true;
+	GridEnabled = !GridEnabled;
 	reDraw();
 }
 
@@ -636,24 +702,20 @@ function changeTexture(textureN)
 //Функции для преобразования декартовых координат в изометрические. Нужно для отрисовки представления
 function decartToIsometryX(x,y)
 {
-	var isoX = x - y;
-	return isoX;
+	return x - y;
 }
 function decartToIsometryY(x,y)
 {
-	var isoY = (x + y)/2;
-	return isoY;
+	return (x + y) / 2;
 }
 //Функции для преобразования изометрических координат в декартовы.
 function isometryToDecartX(x,y)
 {
-	decX = (x + 2*y)/2;
-	return decX;
+	return (x + 2 * y) / 2;
 }
 function isometryToDecartY(x,y)
 {
-	decY = (2*y - x)/2;
-	return decY;
+	return (2 * y - x) / 2;
 }
 //Функция выбора инструмента
 function chooseInstrument(instName)
